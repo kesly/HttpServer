@@ -26,14 +26,18 @@ public class WebPing {
             addr = sock.getInetAddress();
             System.out.println("Connected to " + addr);
             PrintStream socOut = new PrintStream(sock.getOutputStream());
-            socOut.println("GET test");
+
+            String request = "GET test";
+
+            // send request
+            socOut.println(request);
             //sock.close();
             BufferedReader socIn = new BufferedReader(
                     new InputStreamReader(sock.getInputStream()));
 
-            while(true){
+            while (true) {
                 try {
-                    System.out.println("echo: " + socIn.readLine());
+                    System.out.println(socIn.readLine());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
