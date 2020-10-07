@@ -2,12 +2,13 @@
 
 package http.server;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StreamCorruptedException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.Buffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Date;
 
 import javafx.util.Pair;
@@ -23,6 +24,8 @@ import javafx.util.Pair;
  * @version 1.0
  */
 public class WebServer {
+
+    private final String RESSOURCE_DIRECTORY = "src/http/server/web/";
 
     /**
      * WebServer constructor.
@@ -56,14 +59,13 @@ public class WebServer {
                 // blank line signals the end of the client HTTP
                 // headers.
                 String str = "";
-                System.out.println("str1: " + str);
-
                 int i = 0;
                 while (!(str != null && !str.equals(""))) {
                     str = in.readLine();
-
                 }
-                handleRequest(str, out);
+
+
+                handleRequest(str, out, in);
 
 
                 // Send the response
@@ -84,7 +86,7 @@ public class WebServer {
         }
     }
 
-    public void handleRequest(String str, PrintWriter out) {
+    public void handleRequest(String str, PrintWriter out, BufferedReader in) throws IOException {
 
         // wich method
 
@@ -93,6 +95,9 @@ public class WebServer {
         switch (method) {
             case "GET":
                 doGet(str, out);
+                break;
+            case "POST":
+                doPost(str, out, in);
                 break;
         }
     }
@@ -104,17 +109,92 @@ public class WebServer {
 
     public void doGet(String request, PrintWriter out) {
 
-        String url = request.split(" ")[1];
+        String uri = request.split(" ")[1];
+        String url = uri.split("\\?")[0];
+
+        Pair<Integer, String> statusCode;
 
         // search ressource
+        String content = "";
+        try {
+            content = this.readFile(url);
+            statusCode = new Pair<>(200, "OK");
+        } catch (IOException e) {
+            System.out.println("Ressource non trouvé");
+            statusCode = new Pair<>(400, "Bad Request");
+        }
 
         // determine the status code
 
         //Response to client
+        sendHeader(out, statusCode, "text/html", content.length());
+        if (!content.equals("")) {
+            this.sendBody(out, content);
+        } else {
+            this.sendBody(out, "404");
+        }
+        out.flush();
+    }
 
-        sendHeader(out, new Pair<>(200, "OK"), "text/html", 160);
-        sendBody(out);
+    public void doPost(String request, PrintWriter out, BufferedReader in) throws IOException {
 
+        String otherContent = ".";
+
+        int contentLength = 0;
+
+        while (!otherContent.equals("")) {
+            otherContent = in.readLine();
+            if (otherContent.startsWith("Content-Length")) {
+                contentLength = Integer.parseInt(otherContent.split(" ")[1]);
+            }
+        }
+
+        char[] buffer = new char[contentLength];
+        in.read(buffer, 0, contentLength);
+
+        System.out.println("body : " + new String(buffer));
+
+        // traiter le buffer
+
+        String url = request.split(" ")[1];
+
+        Pair<Integer, String> statusCode = new Pair<>(302, "Found");
+
+        String path = "/Users/keslygassant/Documents/insa/4ifa/sequence1/ecole/reseaux/projet/TP-HTTP-Code/src/http/server/web/";
+
+        Process process = new ProcessBuilder(path + "index.php", "param1", "param2").start();
+        InputStream is = process.getInputStream();
+        InputStreamReader isr = new InputStreamReader(is);
+        BufferedReader br = new BufferedReader(isr);
+        String line;
+
+        System.out.println("line ");
+//        System.out.printf("Output of running %s is:", Arrays.toString(args));
+
+        System.out.println("line 2 : " + br.readLine());
+        while ((line = br.readLine()) != null) {
+            System.out.println(line);
+        }
+
+        // search ressource
+        String content = "";
+        try {
+            content = this.readFile(url);
+//            statusCode = new Pair<>(200, "OK");
+        } catch (IOException e) {
+            System.out.println("Ressource non trouvé");
+//            statusCode = new Pair<>(400, "Bad Request");
+        }
+
+//         determine the status code
+
+        //Response to client
+        sendHeader(out, statusCode, "text/html", content.length());
+        if (!content.equals("")) {
+            this.sendBody(out, content);
+        } else {
+            this.sendBody(out, "404");
+        }
         out.flush();
     }
 
@@ -128,18 +208,13 @@ public class WebServer {
         out.println("");
     }
 
-    public void sendBody(PrintWriter out) {
+    public String readFile(String path) throws IOException {
+        Path fileName = Path.of(RESSOURCE_DIRECTORY, path);
+        return Files.readString(fileName);
+    }
 
-        out.println("<!DOCTYPE html>\n" +
-                "<html lang=\"en\" dir=\"ltr\">\n" +
-                "  <head>\n" +
-                "    <meta charset=\"utf-8\">\n" +
-                "    <title></title>\n" +
-                "  </head>\n" +
-                "  <body>\n" +
-                "    <h1> hello world </h1>\n" +
-                "  </body>\n" +
-                "</html>");
+    public void sendBody(PrintWriter out, String content) {
+        out.println(content);
     }
 
     public int getSuccessCode() {
