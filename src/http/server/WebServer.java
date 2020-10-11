@@ -5,11 +5,15 @@ package http.server;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URLDecoder;
 import java.nio.Buffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javafx.util.Pair;
 
@@ -136,6 +140,35 @@ public class WebServer {
         out.flush();
     }
 
+    public void doGet(String request, PrintWriter out) {
+
+        String uri = request.split(" ")[1];
+        String url = uri.split("\\?")[0];
+
+        Pair<Integer, String> statusCode;
+
+        // search ressource
+        String content = "";
+        try {
+            content = this.readFile(url);
+            statusCode = new Pair<>(200, "OK");
+        } catch (IOException e) {
+            System.out.println("Ressource non trouvé");
+            statusCode = new Pair<>(400, "Bad Request");
+        }
+
+        // determine the status code
+
+        //Response to client
+        sendHeader(out, statusCode, "text/html", content.length());
+        if (!content.equals("")) {
+            this.sendBody(out, content);
+        } else {
+            this.sendBody(out, "404");
+        }
+        out.flush();
+    }
+
     public void doPost(String request, PrintWriter out, BufferedReader in) throws IOException {
 
         String otherContent = ".";
@@ -150,48 +183,32 @@ public class WebServer {
         }
 
         char[] buffer = new char[contentLength];
-        in.read(buffer, 0, contentLength);
+        in.read(buffer, 0, contentLength); // read parameter
 
-        System.out.println("body : " + new String(buffer));
+        String parameters = decodeValue(new String(buffer));
 
         // traiter le buffer
 
-        String url = request.split(" ")[1];
+        String uri = request.split(" ")[1];
+        String url = uri.split("\\?")[0];
+
+        String[] fileType = url.split(".");
 
         Pair<Integer, String> statusCode = new Pair<>(302, "Found");
 
-        String path = "/Users/keslygassant/Documents/insa/4ifa/sequence1/ecole/reseaux/projet/TP-HTTP-Code/src/http/server/web/";
+        String path = RESSOURCE_DIRECTORY + url;
 
-        Process process = new ProcessBuilder(path + "index.php", "param1", "param2").start();
-        InputStream is = process.getInputStream();
-        InputStreamReader isr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(isr);
-        String line;
+        String output = this.execPHP(path, parameters);
 
-        System.out.println("line ");
-//        System.out.printf("Output of running %s is:", Arrays.toString(args));
+        System.out.println("sorti : " + output);
 
-        System.out.println("line 2 : " + br.readLine());
-        while ((line = br.readLine()) != null) {
-            System.out.println(line);
-        }
-
-        // search ressource
-        String content = "";
-        try {
-            content = this.readFile(url);
-//            statusCode = new Pair<>(200, "OK");
-        } catch (IOException e) {
-            System.out.println("Ressource non trouvé");
-//            statusCode = new Pair<>(400, "Bad Request");
-        }
 
 //         determine the status code
 
         //Response to client
-        sendHeader(out, statusCode, "text/html", content.length());
-        if (!content.equals("")) {
-            this.sendBody(out, content);
+        sendHeader(out, statusCode, "text/html", output.length());
+        if (!output.equals("")) {
+            this.sendBody(out, output);
         } else {
             this.sendBody(out, "404");
         }
@@ -217,8 +234,38 @@ public class WebServer {
         out.println(content);
     }
 
+
+    public String execPHP(String scriptName, String param) {
+
+        StringBuilder output = new StringBuilder();
+
+        try {
+            String line;
+
+            Process p = Runtime.getRuntime().exec("php " + scriptName + " " + param);
+            BufferedReader input =
+                    new BufferedReader
+                            (new InputStreamReader(p.getInputStream()));
+            while ((line = input.readLine()) != null) {
+                output.append(line);
+            }
+            input.close();
+        } catch (Exception err) {
+            err.printStackTrace();
+        }
+        return output.toString();
+    }
+
     public int getSuccessCode() {
         return 200;
+    }
+
+    public static String decodeValue(String value) {
+        try {
+            return URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException ex) {
+            throw new RuntimeException(ex.getCause());
+        }
     }
 
     /**

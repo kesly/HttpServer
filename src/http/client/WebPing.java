@@ -29,7 +29,7 @@ public class WebPing {
 
 //            String request = "GET index.html";
 
-            String request = "POST index.html HTTP/1.0 \n From: frog@jmarshall.com\n" +
+            String request = "POST index.php HTTP/1.0 \n From: frog@jmarshall.com\n" +
                     "User-Agent: HTTPTool/1.0\n" +
                     "Content-Type: application/x-www-form-urlencoded\n" +
                     "Content-Length: 32\n" +
