@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import http.server.service.ContentType;
 import javafx.util.Pair;
 
 /**
@@ -103,6 +104,17 @@ public class WebServer {
             case "POST":
                 doPost(str, out, in);
                 break;
+            case "HEAD":
+                doHead(str, out);
+                break;
+            case "PUT":
+                doPut(str, out, in);
+                break;
+            case "DELETE":
+                doDelete(str, out);
+                break;
+
+
         }
     }
 
@@ -111,15 +123,18 @@ public class WebServer {
         return str.split(" ")[0];
     }
 
+
     public void doGet(String request, PrintWriter out) {
 
         String uri = request.split(" ")[1];
         String url = uri.split("\\?")[0];
+        System.out.print("URL " +url);
+        String extension = url.split("\\.")[1];
 
         Pair<Integer, String> statusCode;
 
         // search ressource
-        String content = "";
+        byte content[];
         try {
             content = this.readFile(url);
             statusCode = new Pair<>(200, "OK");
@@ -131,7 +146,9 @@ public class WebServer {
         // determine the status code
 
         //Response to client
-        sendHeader(out, statusCode, "text/html", content.length());
+        ContentType contentType = new ContentType(extension);
+
+        sendHeader(out, statusCode, contentType.getContentType(), content.length());
         if (!content.equals("")) {
             this.sendBody(out, content);
         } else {
@@ -140,7 +157,7 @@ public class WebServer {
         out.flush();
     }
 
-    public void doGet(String request, PrintWriter out) {
+    public void doHead(String request, PrintWriter out) {
 
         String uri = request.split(" ")[1];
         String url = uri.split("\\?")[0];
@@ -161,11 +178,29 @@ public class WebServer {
 
         //Response to client
         sendHeader(out, statusCode, "text/html", content.length());
-        if (!content.equals("")) {
-            this.sendBody(out, content);
-        } else {
-            this.sendBody(out, "404");
+
+        out.flush();
+    }
+
+    public void doDelete(String request, PrintWriter out) {
+
+        String uri = request.split(" ")[1];
+        String url = uri.split("\\?")[0];
+
+        Pair<Integer, String> statusCode;
+
+        // search ressource
+        File file = new File(RESSOURCE_DIRECTORY+url);
+        if(file.delete()){
+            System.out.println("Le fichier "+file.getName()+" a été supprimé");
+            statusCode = new Pair<>(200, "OK");
+        }else {
+            statusCode = new Pair<>(404, "Resource not found");
         }
+
+        //Response to client
+        sendHeader(out, statusCode, "text/html", null);
+
         out.flush();
     }
 
@@ -215,23 +250,74 @@ public class WebServer {
         out.flush();
     }
 
-    public void sendHeader(PrintWriter out, Pair<Integer, String> statusCode, String contentType, int contentLength) {
+    public void doPut(String request, PrintWriter out, BufferedReader in) throws IOException {
+
+        String otherContent = ".";
+
+        int contentLength = 0;
+
+        while (!otherContent.equals("")) {
+            otherContent = in.readLine();
+            if (otherContent.startsWith("Content-Length")) {
+                contentLength = Integer.parseInt(otherContent.split(" ")[1]);
+            }
+        }
+
+        char[] buffer = new char[contentLength];
+        in.read(buffer, 0, contentLength); // read parameter
+
+        String parameters = decodeValue(new String(buffer));
+
+        // traiter le buffer
+
+        String uri = request.split(" ")[1];
+        String url = uri.split("\\?")[0];
+
+        String[] fileType = url.split(".");
+
+        Pair<Integer, String> statusCode = new Pair<>(302, "Found");
+
+        String path = RESSOURCE_DIRECTORY + url;
+
+        String output = this.execPHP(path, parameters);
+
+        System.out.println("sorti : " + output);
+
+
+//         determine the status code
+
+        //Response to client
+        sendHeader(out, statusCode, "text/html", output.length());
+        if (!output.equals("")) {
+            this.sendBody(out, output);
+        } else {
+            this.sendBody(out, "404");
+        }
+        out.flush();
+    }
+    public void sendHeader(PrintWriter out, Pair<Integer, String> statusCode, String contentType, Integer contentLength) {
 
         out.println(" HTTP/1.1 " + statusCode.getKey() + " " + statusCode.getValue());
         out.println("Date: " + new Date().toString());
-        out.println("Content-Type: " + contentType);
-        out.println("Content-Encoding: UTF-8");
-        out.println("Content-Length: " + contentLength);
+        if(contentLength!=null){
+            out.println("Content-Type: " + contentType);
+            out.println("Content-Encoding: UTF-8");
+            out.println("Content-Length: " + contentLength);
+        }
         out.println("");
     }
 
-    public String readFile(String path) throws IOException {
+    public byte[] readFile(String path) throws IOException {
         Path fileName = Path.of(RESSOURCE_DIRECTORY, path);
-        return Files.readString(fileName);
+
+        return Files.readAllBytes(fileName);
     }
 
-    public void sendBody(PrintWriter out, String content) {
+    public void sendBody(PrintWriter out, byte[] content) {
         out.println(content);
+        for(int i=0; i<content.length; i++){
+
+        }
     }
 
 

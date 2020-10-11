@@ -27,14 +27,18 @@ public class WebPing {
             System.out.println("Connected to " + addr);
             PrintStream socOut = new PrintStream(sock.getOutputStream());
 
-//            String request = "GET index.html";
+            String request = "GET test.jpg";
 
-            String request = "POST index.php HTTP/1.0 \n From: frog@jmarshall.com\n" +
-                    "User-Agent: HTTPTool/1.0\n" +
-                    "Content-Type: application/x-www-form-urlencoded\n" +
-                    "Content-Length: 32\n" +
-                    "\n" +
-                    "home=Cosby&favorite+flavor=flies";
+//            String request = "DELETE teste.html";
+
+//            String request = "HEAD index.html";
+
+//            String request = "POST index.php HTTP/1.0 \n From: frog@jmarshall.com\n" +
+//                    "User-Agent: HTTPTool/1.0\n" +
+//                    "Content-Type: application/x-www-form-urlencoded\n" +
+//                    "Content-Length: 32\n" +
+//                    "\n" +
+//                    "home=Cosby&favorite+flavor=flies";
 
             // send request
             socOut.println(request);
