@@ -128,13 +128,13 @@ public class WebServer {
 
         String uri = request.split(" ")[1];
         String url = uri.split("\\?")[0];
-        System.out.print("URL " +url);
+        System.out.print("URL " + url);
         String extension = url.split("\\.")[1];
 
         Pair<Integer, String> statusCode;
 
         // search ressource
-        byte content[];
+        String content = "";
         try {
             content = this.readFile(url);
             statusCode = new Pair<>(200, "OK");
@@ -190,11 +190,11 @@ public class WebServer {
         Pair<Integer, String> statusCode;
 
         // search ressource
-        File file = new File(RESSOURCE_DIRECTORY+url);
-        if(file.delete()){
-            System.out.println("Le fichier "+file.getName()+" a été supprimé");
+        File file = new File(RESSOURCE_DIRECTORY + url);
+        if (file.delete()) {
+            System.out.println("Le fichier " + file.getName() + " a été supprimé");
             statusCode = new Pair<>(200, "OK");
-        }else {
+        } else {
             statusCode = new Pair<>(404, "Resource not found");
         }
 
@@ -295,11 +295,12 @@ public class WebServer {
         }
         out.flush();
     }
+
     public void sendHeader(PrintWriter out, Pair<Integer, String> statusCode, String contentType, Integer contentLength) {
 
         out.println(" HTTP/1.1 " + statusCode.getKey() + " " + statusCode.getValue());
         out.println("Date: " + new Date().toString());
-        if(contentLength!=null){
+        if (contentLength != null) {
             out.println("Content-Type: " + contentType);
             out.println("Content-Encoding: UTF-8");
             out.println("Content-Length: " + contentLength);
@@ -307,17 +308,16 @@ public class WebServer {
         out.println("");
     }
 
-    public byte[] readFile(String path) throws IOException {
+    public String readFile(String path) throws IOException {
         Path fileName = Path.of(RESSOURCE_DIRECTORY, path);
-
-        return Files.readAllBytes(fileName);
+        return Files.readString(fileName);
     }
 
-    public void sendBody(PrintWriter out, byte[] content) {
+    public void sendBody(PrintWriter out, String content) {
         out.println(content);
-        for(int i=0; i<content.length; i++){
-
-        }
+//        for (int i = 0; i < content.length(); i++) {
+//
+//        }
     }
 
 
