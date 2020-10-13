@@ -42,7 +42,7 @@ public class WebServer {
         System.out.println("(press ctrl-c to exit)");
         try {
             // create the main server socket
-            s = new ServerSocket(3007);
+            s = new ServerSocket(3008);
         } catch (Exception e) {
             System.out.println("Error: " + e);
             return;
@@ -57,7 +57,7 @@ public class WebServer {
                 System.out.println("Connection, sending data.");
                 BufferedReader in = new BufferedReader(new InputStreamReader(
                         remote.getInputStream()));
-                PrintWriter out = new PrintWriter(remote.getOutputStream());
+                OutputStream out = remote.getOutputStream();
 
                 // read the data sent. We basically ignore it,
                 // stop reading once a blank line is hit. This
@@ -70,7 +70,9 @@ public class WebServer {
                 }
 
 
+                System.out.println("coucou");
                 handleRequest(str, out, in);
+
 
 
                 // Send the response
@@ -91,10 +93,11 @@ public class WebServer {
         }
     }
 
-    public void handleRequest(String str, PrintWriter out, BufferedReader in) throws IOException {
+    public void handleRequest(String str, OutputStream out, BufferedReader in) throws IOException {
 
         // wich method
 
+        System.out.println("str : " + str);
         String method = getMethod(str);
 
         switch (method) {
@@ -113,8 +116,8 @@ public class WebServer {
             case "DELETE":
                 doDelete(str, out);
                 break;
-
-
+            default:
+                break;
         }
     }
 
@@ -124,9 +127,10 @@ public class WebServer {
     }
 
 
-    public void doGet(String request, PrintWriter out) {
+    public void doGet(String request, OutputStream out) throws IOException {
 
         String uri = request.split(" ")[1];
+        System.out.println("uri" + uri);
         String url = uri.split("\\?")[0];
         System.out.print("URL " + url);
         String extension = url.split("\\.")[1];
@@ -135,8 +139,11 @@ public class WebServer {
 
         // search ressource
         String content = "";
+        byte[] contentByte = null;
         try {
-            content = this.readFile(url);
+//            content = this.readFile(url);
+            contentByte = this.readFileByte(url);
+            System.out.println("passe");
             statusCode = new Pair<>(200, "OK");
         } catch (IOException e) {
             System.out.println("Ressource non trouvé");
@@ -148,16 +155,27 @@ public class WebServer {
         //Response to client
         ContentType contentType = new ContentType(extension);
 
-        sendHeader(out, statusCode, contentType.getContentType(), content.length());
-        if (!content.equals("")) {
-            this.sendBody(out, content);
+//        sendHeader(out, statusCode, contentType.getContentType(), content.length());
+
+        System.out.println("type" + contentType.getContentType());
+        sendHeader(out, statusCode, contentType.getContentType(), contentByte.length);
+
+//        if (!content.equals("")) {
+//            this.sendBody(out, content);
+//        } else {
+//            this.sendBody(out, "404");
+//        }
+
+        if (contentByte.length != 0) {
+            System.out.println("good");
+            this.sendBodyByte(out, contentByte);
         } else {
             this.sendBody(out, "404");
         }
         out.flush();
     }
 
-    public void doHead(String request, PrintWriter out) {
+    public void doHead(String request, OutputStream out) throws IOException {
 
         String uri = request.split(" ")[1];
         String url = uri.split("\\?")[0];
@@ -182,7 +200,7 @@ public class WebServer {
         out.flush();
     }
 
-    public void doDelete(String request, PrintWriter out) {
+    public void doDelete(String request, OutputStream out) throws IOException {
 
         String uri = request.split(" ")[1];
         String url = uri.split("\\?")[0];
@@ -204,7 +222,7 @@ public class WebServer {
         out.flush();
     }
 
-    public void doPost(String request, PrintWriter out, BufferedReader in) throws IOException {
+    public void doPost(String request, OutputStream out, BufferedReader in) throws IOException {
 
         String otherContent = ".";
 
@@ -250,7 +268,7 @@ public class WebServer {
         out.flush();
     }
 
-    public void doPut(String request, PrintWriter out, BufferedReader in) throws IOException {
+    public void doPut(String request, OutputStream out, BufferedReader in) throws IOException {
 
         String otherContent = ".";
 
@@ -296,16 +314,17 @@ public class WebServer {
         out.flush();
     }
 
-    public void sendHeader(PrintWriter out, Pair<Integer, String> statusCode, String contentType, Integer contentLength) {
+    public void sendHeader(OutputStream out, Pair<Integer, String> statusCode, String contentType, Integer contentLength) throws IOException {
 
-        out.println(" HTTP/1.1 " + statusCode.getKey() + " " + statusCode.getValue());
-        out.println("Date: " + new Date().toString());
+
+        out.write((" HTTP/1.1 " + statusCode.getKey() + " " + statusCode.getValue()).getBytes());
+        out.write(("Date: " + new Date().toString()).getBytes());
         if (contentLength != null) {
-            out.println("Content-Type: " + contentType);
-            out.println("Content-Encoding: UTF-8");
-            out.println("Content-Length: " + contentLength);
+            out.write(("Content-Type: " + contentType).getBytes());
+            out.write("Content-Encoding: UTF-8".getBytes());
+            out.write(("Content-Length: " + contentLength).getBytes());
         }
-        out.println("");
+        out.write("".getBytes());
     }
 
     public String readFile(String path) throws IOException {
@@ -313,11 +332,17 @@ public class WebServer {
         return Files.readString(fileName);
     }
 
-    public void sendBody(PrintWriter out, String content) {
-        out.println(content);
-//        for (int i = 0; i < content.length(); i++) {
-//
-//        }
+    public byte[] readFileByte(String path) throws IOException {
+        Path fileName = Path.of(RESSOURCE_DIRECTORY, path);
+        return Files.readAllBytes(fileName);
+    }
+
+    public void sendBody(OutputStream out, String content) throws IOException {
+        out.write(content.getBytes());
+    }
+
+    public void sendBodyByte(OutputStream out, byte[] content) throws IOException {
+        out.write(content);
     }
 
 
