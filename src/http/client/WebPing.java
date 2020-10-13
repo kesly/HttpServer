@@ -32,7 +32,7 @@ public class WebPing {
             System.out.println("Connected to " + addr);
             PrintStream socOut = new PrintStream(sock.getOutputStream());
 
-            String request = "GET teste.html";
+            String request = "GET test.html";
 
 //            String request = "DELETE teste.html";
 
@@ -47,7 +47,7 @@ public class WebPing {
 
             // send request
             socOut.println(request);
-            //sock.close();
+//            sock.close();
             BufferedReader socIn = new BufferedReader(
                     new InputStreamReader(sock.getInputStream()));
 

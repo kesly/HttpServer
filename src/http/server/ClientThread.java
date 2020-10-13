@@ -1,6 +1,7 @@
 package http.server;
 
 import http.server.service.ContentType;
+import http.server.service.ToolBox;
 import javafx.util.Pair;
 
 import java.io.*;
@@ -11,11 +12,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 
+import static http.server.service.HttpCode.*;
+
 public class ClientThread extends Thread {
 
     private final String RESSOURCE_DIRECTORY = "src/http/server/web/";
+    public final String RESPONSE_PAGE_DIRECTORY = "src/http/server/responsePages/";
+
+    private final String CRLF = "\r\n";
 
     private Socket clientSocket;
+
+    private String uri;
+    private String url;
+    private String extension;
+
+    private Pair<Integer, String> statusCode;
+
+    private OutputStream out;
 
     public ClientThread(Socket clientSocket) {
         this.clientSocket = clientSocket;
@@ -26,52 +40,64 @@ public class ClientThread extends Thread {
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(
                     clientSocket.getInputStream()));
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream());
+            this.out = clientSocket.getOutputStream();
 
             // read the data sent. We basically ignore it,
             // stop reading once a blank line is hit. This
             // blank line signals the end of the client HTTP
             // headers.
             String str = "";
-            int i = 0;
             while (!(str != null && !str.equals(""))) {
                 str = in.readLine();
             }
 
-            handleRequest(str, out, in);
+            handleRequest(str, in);
         } catch (Exception e) {
             System.out.println("Error: " + e);
             e.printStackTrace();
         }
+
+        System.out.println("presque la fin...");
+//        try {
+//            clientSocket.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
+    public void handleRequest(String request, BufferedReader in) throws IOException {
 
-    public void handleRequest(String str, PrintWriter out, BufferedReader in) throws IOException {
+        // vich method
 
-        // wich method
+        System.out.println("str : " + request);
+        String method = getMethod(request);
 
-        String method = getMethod(str);
+        this.uri = ToolBox.getUri(request);
+        this.url = ToolBox.getUrl(uri);
+        this.extension = ToolBox.getExtension(url);
 
+        System.out.println("method :" + method);
         switch (method) {
             case "GET":
-                doGet(str, out);
+                doGet();
                 break;
             case "POST":
-                doPost(str, out, in);
+                doPost(in);
                 break;
             case "HEAD":
-                doHead(str, out);
+                doHead();
                 break;
             case "PUT":
-                doPut(str, out, in);
+                doPut(in);
                 break;
             case "DELETE":
-                doDelete(str, out);
+                doDelete();
                 break;
             default:
                 break;
-
         }
+        this.out.flush();
+//        this.out.close();
     }
 
 
@@ -80,87 +106,66 @@ public class ClientThread extends Thread {
     }
 
 
-    public void doGet(String request, PrintWriter out) {
-
-        String uri = request.split(" ")[1];
-        String url = uri.split("\\?")[0];
-        System.out.print("URL " + url);
-        String extension = url.split("\\.")[1];
-
-        Pair<Integer, String> statusCode;
+    public void doGet() throws IOException {
 
         // search ressource
-        String content = "";
+        byte[] contentByte = null;
         try {
-            content = this.readFile(url);
-            statusCode = new Pair<>(200, "OK");
+            contentByte = ToolBox.readFileByte(RESSOURCE_DIRECTORY, this.url);
+            this.statusCode = OK;
+            ContentType contentType = new ContentType(this.extension);
+            sendHeader(statusCode, contentType.getContentType(), contentByte.length);
         } catch (IOException e) {
             System.out.println("Ressource non trouvé");
-            statusCode = new Pair<>(400, "Bad Request");
+            statusCode = NOT_FOUND;
+            contentByte = ToolBox.readFileByte(RESPONSE_PAGE_DIRECTORY, "pageNotFound.html");
+            sendHeader(statusCode, "text/html", contentByte.length);
         }
 
-        // determine the status code
-
-        //Response to client
-        ContentType contentType = new ContentType(extension);
-
-        sendHeader(out, statusCode, contentType.getContentType(), content.length());
-        if (!content.equals("")) {
-            this.sendBody(out, content);
-        } else {
-            this.sendBody(out, "404");
-        }
-        out.flush();
+        this.sendBodyByte(contentByte);
     }
 
-    public void doHead(String request, PrintWriter out) {
 
-        String uri = request.split(" ")[1];
-        String url = uri.split("\\?")[0];
-
-        Pair<Integer, String> statusCode;
+    public void doHead() throws IOException {
 
         // search ressource
-        String content = "";
+
+        byte[] contentByte = null;
         try {
-            content = this.readFile(url);
-            statusCode = new Pair<>(200, "OK");
+            contentByte = ToolBox.readFileByte(RESSOURCE_DIRECTORY, this.url);
+            this.statusCode = OK;
+            ContentType contentType = new ContentType(this.extension);
+            sendHeader(statusCode, contentType.getContentType(), contentByte.length);
         } catch (IOException e) {
             System.out.println("Ressource non trouvé");
-            statusCode = new Pair<>(400, "Bad Request");
+            statusCode = NOT_FOUND;
+            contentByte = ToolBox.readFileByte(RESPONSE_PAGE_DIRECTORY, "pageNotFound.html");
+            sendHeader(statusCode, "text/html", contentByte.length);
         }
 
-        // determine the status code
-
-        //Response to client
-        sendHeader(out, statusCode, "text/html", content.length());
-
-        out.flush();
     }
 
-    public void doDelete(String request, PrintWriter out) {
-
-        String uri = request.split(" ")[1];
-        String url = uri.split("\\?")[0];
-
-        Pair<Integer, String> statusCode;
+    public void doDelete() throws IOException {
 
         // search ressource
-        File file = new File(RESSOURCE_DIRECTORY + url);
+        File file = new File(RESSOURCE_DIRECTORY + this.url);
+        byte[] contentByte = null;
+
         if (file.delete()) {
             System.out.println("Le fichier " + file.getName() + " a été supprimé");
-            statusCode = new Pair<>(200, "OK");
+            this.statusCode = OK;
+            contentByte = ToolBox.readFileByte(RESPONSE_PAGE_DIRECTORY, "ressourceDeleted.html");
+            sendHeader(statusCode, "text/html", contentByte.length);
         } else {
-            statusCode = new Pair<>(404, "Resource not found");
+            statusCode = NOT_FOUND;
+            contentByte = ToolBox.readFileByte(RESPONSE_PAGE_DIRECTORY, "pageNotFound.html");
+            sendHeader(statusCode, "text/html", contentByte.length);
         }
 
-        //Response to client
-        sendHeader(out, statusCode, "text/html", null);
-
-        out.flush();
+        sendBodyByte(contentByte);
     }
 
-    public void doPost(String request, PrintWriter out, BufferedReader in) throws IOException {
+    public void doPost(BufferedReader in) throws IOException {
 
         String otherContent = ".";
 
@@ -180,14 +185,11 @@ public class ClientThread extends Thread {
 
         // traiter le buffer
 
-        String uri = request.split(" ")[1];
-        String url = uri.split("\\?")[0];
-
-        String[] fileType = url.split(".");
+        String[] fileType = this.url.split(".");
 
         Pair<Integer, String> statusCode = new Pair<>(302, "Found");
 
-        String path = RESSOURCE_DIRECTORY + url;
+        String path = RESSOURCE_DIRECTORY + this.url;
 
         String output = this.execPHP(path, parameters);
 
@@ -197,16 +199,15 @@ public class ClientThread extends Thread {
 //         determine the status code
 
         //Response to client
-        sendHeader(out, statusCode, "text/html", output.length());
+        sendHeader(statusCode, "text/html", output.length());
         if (!output.equals("")) {
-            this.sendBody(out, output);
+            this.sendBodyByte(output.getBytes());
         } else {
-            this.sendBody(out, "404");
+            this.sendBodyByte("404".getBytes());
         }
-        out.flush();
     }
 
-    public void doPut(String request, PrintWriter out, BufferedReader in) throws IOException {
+    public void doPut(BufferedReader in) throws IOException {
 
         String otherContent = ".";
 
@@ -226,14 +227,11 @@ public class ClientThread extends Thread {
 
         // traiter le buffer
 
-        String uri = request.split(" ")[1];
-        String url = uri.split("\\?")[0];
-
         String[] fileType = url.split(".");
 
         Pair<Integer, String> statusCode = new Pair<>(302, "Found");
 
-        String path = RESSOURCE_DIRECTORY + url;
+        String path = RESSOURCE_DIRECTORY + this.url;
 
         String output = this.execPHP(path, parameters);
 
@@ -243,25 +241,25 @@ public class ClientThread extends Thread {
 //         determine the status code
 
         //Response to client
-        sendHeader(out, statusCode, "text/html", output.length());
+        sendHeader(statusCode, "text/html", output.length());
         if (!output.equals("")) {
-            this.sendBody(out, output);
+            this.sendBodyByte(output.getBytes());
         } else {
-            this.sendBody(out, "404");
+            this.sendBodyByte("404".getBytes());
         }
-        out.flush();
     }
 
-    public void sendHeader(PrintWriter out, Pair<Integer, String> statusCode, String contentType, Integer contentLength) {
+    public void sendHeader(Pair<Integer, String> statusCode, String contentType, Integer contentLength) throws IOException {
 
-        out.println(" HTTP/1.1 " + statusCode.getKey() + " " + statusCode.getValue());
-        out.println("Date: " + new Date().toString());
+
+        this.out.write(("HTTP/1.1 " + statusCode.getKey() + " " + statusCode.getValue() + CRLF).getBytes());
+        this.out.write(("Date: " + new Date().toString() + CRLF).getBytes());
         if (contentLength != null) {
-            out.println("Content-Type: " + contentType);
-            out.println("Content-Encoding: UTF-8");
-            out.println("Content-Length: " + contentLength);
+            this.out.write(("Content-Type: " + contentType + CRLF).getBytes());
+            this.out.write(("Content-Encoding: UTF-8" + CRLF).getBytes());
+            this.out.write(("Content-Length: " + contentLength + CRLF).getBytes());
         }
-        out.println("");
+        this.out.write(("" + CRLF).getBytes());
     }
 
     public String readFile(String path) throws IOException {
@@ -269,13 +267,9 @@ public class ClientThread extends Thread {
         return Files.readString(fileName);
     }
 
-    public void sendBody(PrintWriter out, String content) {
-        out.println(content);
-//        for (int i = 0; i < content.length(); i++) {
-//
-//        }
+    public void sendBodyByte(byte[] content) throws IOException {
+        this.out.write(content);
     }
-
 
     public String execPHP(String scriptName, String param) {
 
@@ -309,4 +303,6 @@ public class ClientThread extends Thread {
             throw new RuntimeException(ex.getCause());
         }
     }
+
+
 }

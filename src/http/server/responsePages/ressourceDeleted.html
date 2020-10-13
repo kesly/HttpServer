@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Page deleted</title>
+    <style>
+        @use postcss-mixins;
+        @use postcss-each;
+        @use postcss-for;
+        @use postcss-color-function;
+        @use postcss-triangle;
+        @use postcss-nested;
+
+        @import url('https://fonts.googleapis.com/css?family=Fira+Mono');
+
+        :root {
+            --color-dark: #000;
+            --color-light: #fff;
+            --radius: .25rem;
+            --gray1: #333;
+            --gray2: #444;
+            --blue1: #90CAF9;
+            --blue2: #1E88E5;
+            --red1: #C62828;
+            --red2: #E57373;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--color-dark);
+            color: var(--color-light);
+            font-family: 'Fira Mono', monospace;
+            font-size: 18px;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .timeout {
+            max-width: 80vw;
+            min-width: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+
+        .timeout > * {
+            margin: 0 .5rem;
+        }
+
+        .server {
+            position: relative;
+
+        .earth {
+            transition: filter 350ms ease;
+        }
+
+        .flames {
+            position: absolute;
+            top: -40px;
+            opacity: 0;
+            transform-origin: bottom center;
+            transform: scale(0);
+            transition: opacity 350ms ease, transform 350ms ease;
+        }
+
+        }
+
+        .progress {
+            appearance: none;
+            height: 1rem;
+
+        &
+        ::-webkit-progress-bar,
+
+        &
+        ::-webkit-progress-value {
+            border-radius: var(--radius);
+        }
+
+        &
+        ::-webkit-progress-bar {
+            border-radius: var(--radius);
+            background: linear-gradient(
+                    var(--gray1) 25%,
+                    var(--gray2) 100%
+            );
+        }
+
+        &
+        ::-webkit-progress-value {
+            transition: background 600ms ease-in-out;
+            background: linear-gradient(
+                    var(--blue1) 25%,
+                    var(--blue2) 100%
+            );
+            box-shadow: 0 0 10px 0 rgba(255, 255, 255, .35);
+        }
+
+        }
+
+        .content {
+            text-align: center;
+
+        h1, p {
+            padding: 0;
+            margin: 0;
+            transform: scale(0);
+            opacity: 0;
+            transition: transform 500ms ease-in-out,
+            opacity 600ms ease-in-out;
+        }
+
+        p {
+            transition-delay: 150ms;
+        }
+
+        }
+
+        /* States */
+
+        .user.is-dead {
+            animation: roto .5s alternate infinite ease-in-out;
+        }
+
+        .server.is-dead {
+
+        .earth {
+            filter: grayscale(1);
+        }
+
+        .flames {
+            opacity: 1;
+            animation: burn 50ms alternate infinite ease-in-out,
+            smolder 500ms alternate infinite ease-in-out;
+        }
+
+        }
+
+        .progress.is-dead::-webkit-progress-value {
+            background: linear-gradient(var(--red1) 25%, var(--red2) 100%);
+        }
+
+        .content.is-visible {
+
+        h1, p {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        }
+
+        /* Animation */
+
+        @keyframes roto {
+            0% {
+                transform: rotate(-15deg);
+            }
+            100% {
+                transform: rotate(15deg);
+            }
+        }
+
+        @keyframes burn {
+            0% {
+                transform: scale(1) skewX(-2.5deg);
+            }
+            100% {
+                transform: scale(1) skewX(2.5deg);
+            }
+        }
+
+        @keyframes smolder {
+            to {
+                filter: brightness(1.5);
+            }
+        }
+    </style>
+</head>
+<body>
+<main>
+
+    <div class="timeout">
+        <div class="user">😅</div>
+        <progress class="progress" value="0" max="100"></progress>
+        <div class="server">
+            <span class="earth">🌎</span>
+            <span class="flames">🔥</span>
+        </div>
+    </div>
+
+    <div class="content">
+        <h1>200</h1>
+        <p>Your ressource has been deleted with success</p>
+    </div>
+
+</main>
+
+<script>
+    document.onload = () => {
+        console.log("coucou kekes");
+        const user = document.querySelector('.user')
+        const progBar = document.querySelector('.progress')
+        const server = document.querySelector('.server')
+        const unhappy = "💀"
+        const content = document.querySelector('.content')
+        let count = 1
+
+        function increment() {
+            requestAnimationFrame(increment)
+            let i = count++
+            if (i < 100) {
+                progBar.value = count++
+            } else {
+                user.innerHTML = unhappy
+                content.classList.add('is-visible')
+                progBar.classList.add('is-dead')
+                server.classList.add('is-dead')
+                user.classList.add('is-dead')
+                window.cancelAnimationFrame()
+            }
+        }
+
+        requestAnimationFrame(increment)
+    }
+</script>
+</body>
+</html>

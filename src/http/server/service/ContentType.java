@@ -12,7 +12,9 @@ public class ContentType {
             new Pair<>("png", "image/png"),
             new Pair<>("webm", "video/webm"),
             new Pair<>("avi", "video/x-msvideo"),
+            new Pair<>("mov", "video/quicktime"),
             new Pair<>("pdf", "application/pdf"),
+            new Pair<>("mp3", "audio/mpeg"),
     };
 
 
