@@ -134,7 +134,7 @@ public class WebServer {
         Pair<Integer, String> statusCode;
 
         // search ressource
-        byte content[];
+        String content = "";
         try {
             content = this.readFile(url);
             statusCode = new Pair<>(200, "OK");
@@ -307,17 +307,14 @@ public class WebServer {
         out.println("");
     }
 
-    public byte[] readFile(String path) throws IOException {
+    public String readFile(String path) throws IOException {
         Path fileName = Path.of(RESSOURCE_DIRECTORY, path);
 
-        return Files.readAllBytes(fileName);
+        return Files.readString(fileName);
     }
 
-    public void sendBody(PrintWriter out, byte[] content) {
+    public void sendBody(PrintWriter out, String content) {
         out.println(content);
-        for(int i=0; i<content.length; i++){
-
-        }
     }
 
 
