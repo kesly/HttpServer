@@ -1,11 +1,16 @@
 package http.client;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import http.server.service.ContentType;
+import javafx.util.Pair;
+
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Date;
 
 public class WebPing {
     public static void main(String[] args) {
@@ -27,7 +32,7 @@ public class WebPing {
             System.out.println("Connected to " + addr);
             PrintStream socOut = new PrintStream(sock.getOutputStream());
 
-            String request = "GET test.jpg";
+            String request = "GET teste.html";
 
 //            String request = "DELETE teste.html";
 
@@ -58,4 +63,5 @@ public class WebPing {
             System.out.println(e);
         }
     }
+
 }
