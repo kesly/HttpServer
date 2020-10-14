@@ -16,15 +16,17 @@ import java.util.Date;
 import static http.server.service.HttpCode.*;
 
 /**
+ * @author  Kesly et Oumar
  * Client thread
  * <p>
- *     Chaque client est tourne communique avec le serveur dans un thread indépendamment des autres.
+ *     Cette classe est un thread qui permet de gérer les requetes http client indépendamment
  *     Cette classe fourni toutes les méthodes (GET, POST, HEAD,...) au client pour qu'il puisse faire des requêtes
+ * <p>
  */
 public class ClientThread extends Thread {
 
     /**
-     * Path of resources directory
+     *  Chemin relatif des ressources du serveur
      */
     private final String RESSOURCE_DIRECTORY = "src/http/server/forbiden/";
 
