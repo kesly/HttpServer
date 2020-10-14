@@ -79,13 +79,6 @@ public class ClientThread extends Thread {
             System.out.println("Error: " + e);
             e.printStackTrace();
         }
-
-        System.out.println("presque la fin...");
-//        try {
-//            clientSocket.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
     /**
@@ -124,6 +117,8 @@ public class ClientThread extends Thread {
                 doDelete();
                 break;
             default:
+                statusCode = BAD_REQUEST;
+                this.sendHeader(statusCode, "text/html", null);
                 break;
         }
         this.out.flush();
