@@ -16,19 +16,19 @@ import java.util.Date;
 import static http.server.service.HttpCode.*;
 
 /**
- * @author  Kesly et Oumar
+ * @author Kesly and Oumar
  * Client thread
  * <p>
- *     Cette classe est un thread qui permet de gérer les requetes http client indépendamment
- *     Cette classe fourni toutes les méthodes (GET, POST, HEAD,...) au client pour qu'il puisse faire des requêtes
+ * This class is a thread that allows you to manage client http requests independently
+ * This class provides all the methods (GET, POST, HEAD, ...) to the client so that it can make requests
  * <p>
  */
 public class ClientThread extends Thread {
 
     /**
-     *  Chemin relatif des ressources du serveur
+     * Chemin relatif des ressources du serveur
      */
-    private final String RESSOURCE_DIRECTORY = "src/http/server/forbiden/";
+    private final String RESSOURCE_DIRECTORY = "src/http/server/ressources/";
 
     /**
      * Path of reponse pages directory
@@ -46,9 +46,11 @@ public class ClientThread extends Thread {
     private Pair<Integer, String> statusCode;
 
     private OutputStream out;
+    private BufferedReader in;
 
     /**
-     * ClientThread Constructeur
+     * ClientThread Constructor
+     *
      * @param clientSocket
      */
     public ClientThread(Socket clientSocket) {
@@ -56,25 +58,22 @@ public class ClientThread extends Thread {
     }
 
     /**
-     * Methode s'exécutant tant que le thread est vivant
+     * Default launch method after a client connection
      */
     @Override
     public void run() {
         try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(
-                    clientSocket.getInputStream() ) );
+            this.in = new BufferedReader(new InputStreamReader(
+                    clientSocket.getInputStream()));
             this.out = clientSocket.getOutputStream();
 
-            // read the data sent. We basically ignore it,
-            // stop reading once a blank line is hit. This
-            // blank line signals the end of the client HTTP
-            // headers.
+
             String str = "";
             while (!(str != null && !str.equals(""))) {
                 str = in.readLine();
             }
 
-            handleRequest(str, in);
+            handleRequest(str);
         } catch (Exception e) {
             System.out.println("Error: " + e);
             e.printStackTrace();
@@ -84,15 +83,13 @@ public class ClientThread extends Thread {
     /**
      * get HTTP request method from request and call the right method for treating client request
      *
-     * @param request
-     * @param in
+     * @param request,
      * @throws IOException
      */
-    public void handleRequest(String request, BufferedReader in) throws IOException {
+    public void handleRequest(String request) throws IOException {
 
         // vich method
 
-        System.out.println("str : " + request);
         String method = getMethod(request);
 
         this.uri = ToolBox.getUri(request);
@@ -105,13 +102,13 @@ public class ClientThread extends Thread {
                 doGet();
                 break;
             case "POST":
-                doPost(in);
+                doPost();
                 break;
             case "HEAD":
                 doHead();
                 break;
             case "PUT":
-                doPut(in);
+                doPut();
                 break;
             case "DELETE":
                 doDelete();
@@ -135,7 +132,6 @@ public class ClientThread extends Thread {
     }
 
     /**
-     *
      * @throws IOException
      */
     public void doGet() throws IOException {
@@ -178,7 +174,6 @@ public class ClientThread extends Thread {
     }
 
     /**
-     *
      * @throws IOException
      */
     public void doDelete() throws IOException {
@@ -202,11 +197,9 @@ public class ClientThread extends Thread {
     }
 
     /**
-     *
-     * @param in
      * @throws IOException
      */
-    public void doPost(BufferedReader in) throws IOException {
+    public void doPost() throws IOException {
 
         String otherContent = ".";
 
@@ -220,7 +213,7 @@ public class ClientThread extends Thread {
         }
 
         char[] buffer = new char[contentLength];
-        in.read(buffer, 0, contentLength); // read parameter
+        this.in.read(buffer, 0, contentLength); // read parameter
 
         String parameters = decodeValue(new String(buffer));
 
@@ -228,27 +221,34 @@ public class ClientThread extends Thread {
 
         String[] fileType = this.url.split(".");
 
-        Pair<Integer, String> statusCode = new Pair<>(302, "Found");
 
-        String path = RESSOURCE_DIRECTORY + this.url;
+//        if (fileType[1].equals("php")) {
 
-        String output = this.execPHP(path, parameters);
-
-        System.out.println("sorti : " + output);
-
-
-//         determine the status code
-
-        //Response to client
-        sendHeader(statusCode, "text/html", output.length());
-        if (!output.equals("")) {
-            this.sendBodyByte(output.getBytes());
-        } else {
-            this.sendBodyByte("404".getBytes());
-        }
+            String path = RESSOURCE_DIRECTORY + this.url;
+            String output = this.execPHP(path, parameters);
+            this.statusCode = OK;
+            sendHeader(statusCode, "text/html", output.length());
+            sendBodyByte(output.getBytes());
+//        } else {
+//
+//            byte[] contentByte = null;
+//
+//            try {
+//                contentByte = ToolBox.readFileByte(RESSOURCE_DIRECTORY, this.url);
+//                this.statusCode = OK;
+//                ContentType contentType = new ContentType(this.extension);
+//                sendHeader(statusCode, contentType.getContentType(), contentByte.length);
+//            } catch (IOException e) {
+//                System.out.println("Ressource non trouvé");
+//                statusCode = NOT_FOUND;
+//                contentByte = ToolBox.readFileByte(RESPONSE_PAGE_DIRECTORY, "pageNotFound.html");
+//                sendHeader(statusCode, "text/html", contentByte.length);
+//            }
+//            sendBodyByte(contentByte);
+//        }
     }
 
-    public void doPut(BufferedReader in) throws IOException {
+    public void doPut() throws IOException {
 
         String otherContent = ".";
 
@@ -262,10 +262,10 @@ public class ClientThread extends Thread {
         }
 
         char[] buffer = new char[contentLength];
-        in.read(buffer, 0, contentLength); // read parameter
+        this.in.read(buffer, 0, contentLength); // read parameter
 
         String parameters = decodeValue(new String(buffer));
-        System.out.println("Param "+parameters);
+        System.out.println("Param " + parameters);
         byte[] contentByte = parameters.getBytes();
         // traiter le buffer
 
@@ -273,11 +273,11 @@ public class ClientThread extends Thread {
 
         File file = new File(path);
 
-        if(file.exists() && !file.isDirectory()){
+        if (file.exists() && !file.isDirectory()) {
             Files.write(Paths.get(path), contentByte);
             statusCode = NO_CONTENT;
         } else {
-            if(file.createNewFile()){
+            if (file.createNewFile()) {
                 Files.write(Paths.get(path), contentByte);
                 statusCode = CREATED;
             } else {

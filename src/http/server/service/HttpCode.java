@@ -36,4 +36,9 @@ public class HttpCode {
      * <code>403</code> Don't have permision to create/modify resource
      */
     public static final Pair FORBIDEN = new Pair(403, "Forbidden");
+
+    /**
+     * <code>403</code> Don't have permision to create/modify resource
+     */
+    public static final Pair FOUND = new Pair(302, "Found");
 }
