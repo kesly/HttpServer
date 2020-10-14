@@ -42,6 +42,8 @@ public class WebPing {
 
 //            String request = "HEAD index.html";
 
+            String request  = "BAD request";
+
 //            String request = "POST index.php HTTP/1.0 \n From: frog@jmarshall.com\n" +
 //                    "User-Agent: HTTPTool/1.0\n" +
 //                    "Content-Type: application/x-www-form-urlencoded\n" +
@@ -49,12 +51,12 @@ public class WebPing {
 //                    "\n" +
 //                    "home=Cosby&favorite+flavor=flies";
 
-            String request = "PUT accueil.php HTTP/1.0 \n From: frog@jmarshall.com\n" +
-                    "User-Agent: HTTPTool/1.0\n" +
-                    "Content-Type: application/x-www-form-urlencoded\n" +
-                    "Content-Length: 46\n" +
-                    "\n" +
-                    "home=Cosby&favorite_flavor=flies&Matler=Kepler";
+//            String request = "PUT accueil.php HTTP/1.0 \n From: frog@jmarshall.com\n" +
+//                    "User-Agent: HTTPTool/1.0\n" +
+//                    "Content-Type: application/x-www-form-urlencoded\n" +
+//                    "Content-Length: 46\n" +
+//                    "\n" +
+//                    "home=Cosby&favorite_flavor=flies&Matler=Kepler";
 
             // send request
             socOut.println(request);
