@@ -12,6 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 
+
+/**
+ * WebPing class
+ */
 public class WebPing {
     public static void main(String[] args) {
 
@@ -32,7 +36,7 @@ public class WebPing {
             System.out.println("Connected to " + addr);
             PrintStream socOut = new PrintStream(sock.getOutputStream());
 
-            String request = "GET test.html";
+//            String request = "GET test.html";
 
 //            String request = "DELETE teste.html";
 
@@ -44,6 +48,13 @@ public class WebPing {
 //                    "Content-Length: 32\n" +
 //                    "\n" +
 //                    "home=Cosby&favorite+flavor=flies";
+
+            String request = "PUT accueil.php HTTP/1.0 \n From: frog@jmarshall.com\n" +
+                    "User-Agent: HTTPTool/1.0\n" +
+                    "Content-Type: application/x-www-form-urlencoded\n" +
+                    "Content-Length: 46\n" +
+                    "\n" +
+                    "home=Cosby&favorite_flavor=flies&Matler=Kepler";
 
             // send request
             socOut.println(request);

@@ -10,13 +10,27 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 
 import static http.server.service.HttpCode.*;
 
+/**
+ * Client thread
+ * <p>
+ *     Chaque client est tourne communique avec le serveur dans un thread indépendamment des autres.
+ *     Cette classe fourni toutes les méthodes (GET, POST, HEAD,...) au client pour qu'il puisse faire des requêtes
+ */
 public class ClientThread extends Thread {
 
-    private final String RESSOURCE_DIRECTORY = "src/http/server/web/";
+    /**
+     * Path of resources directory
+     */
+    private final String RESSOURCE_DIRECTORY = "src/http/server/forbiden/";
+
+    /**
+     * Path of reponse pages directory
+     */
     public final String RESPONSE_PAGE_DIRECTORY = "src/http/server/responsePages/";
 
     private final String CRLF = "\r\n";
@@ -31,15 +45,22 @@ public class ClientThread extends Thread {
 
     private OutputStream out;
 
+    /**
+     * ClientThread Constructeur
+     * @param clientSocket
+     */
     public ClientThread(Socket clientSocket) {
         this.clientSocket = clientSocket;
     }
 
+    /**
+     * Methode s'exécutant tant que le thread est vivant
+     */
     @Override
     public void run() {
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(
-                    clientSocket.getInputStream()));
+                    clientSocket.getInputStream() ) );
             this.out = clientSocket.getOutputStream();
 
             // read the data sent. We basically ignore it,
@@ -65,6 +86,13 @@ public class ClientThread extends Thread {
 //        }
     }
 
+    /**
+     * get HTTP request method from request and call the right method for treating client request
+     *
+     * @param request
+     * @param in
+     * @throws IOException
+     */
     public void handleRequest(String request, BufferedReader in) throws IOException {
 
         // vich method
@@ -97,15 +125,22 @@ public class ClientThread extends Thread {
                 break;
         }
         this.out.flush();
-//        this.out.close();
     }
 
-
-    public String getMethod(String str) {
-        return str.split(" ")[0];
+    /**
+     * get HTTP method by spliting request and take first element
+     *
+     * @param request
+     * @return HTTP method
+     */
+    public String getMethod(String request) {
+        return request.split(" ")[0];
     }
 
-
+    /**
+     *
+     * @throws IOException
+     */
     public void doGet() throws IOException {
 
         // search ressource
@@ -145,6 +180,10 @@ public class ClientThread extends Thread {
 
     }
 
+    /**
+     *
+     * @throws IOException
+     */
     public void doDelete() throws IOException {
 
         // search ressource
@@ -165,6 +204,11 @@ public class ClientThread extends Thread {
         sendBodyByte(contentByte);
     }
 
+    /**
+     *
+     * @param in
+     * @throws IOException
+     */
     public void doPost(BufferedReader in) throws IOException {
 
         String otherContent = ".";
@@ -224,29 +268,30 @@ public class ClientThread extends Thread {
         in.read(buffer, 0, contentLength); // read parameter
 
         String parameters = decodeValue(new String(buffer));
-
+        System.out.println("Param "+parameters);
+        byte[] contentByte = parameters.getBytes();
         // traiter le buffer
-
-        String[] fileType = url.split(".");
-
-        Pair<Integer, String> statusCode = new Pair<>(302, "Found");
 
         String path = RESSOURCE_DIRECTORY + this.url;
 
-        String output = this.execPHP(path, parameters);
+        File file = new File(path);
 
-        System.out.println("sorti : " + output);
+        if(file.exists() && !file.isDirectory()){
+            Files.write(Paths.get(path), contentByte);
+            statusCode = NO_CONTENT;
+        } else {
+            if(file.createNewFile()){
+                Files.write(Paths.get(path), contentByte);
+                statusCode = CREATED;
+            } else {
+                statusCode = FORBIDEN;
+            }
 
-
-//         determine the status code
+        }
 
         //Response to client
-        sendHeader(statusCode, "text/html", output.length());
-        if (!output.equals("")) {
-            this.sendBodyByte(output.getBytes());
-        } else {
-            this.sendBodyByte("404".getBytes());
-        }
+        sendHeader(statusCode, "text/html", contentByte.length);
+
     }
 
     public void sendHeader(Pair<Integer, String> statusCode, String contentType, Integer contentLength) throws IOException {
