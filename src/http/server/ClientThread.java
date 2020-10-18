@@ -9,7 +9,6 @@ import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
 
@@ -21,17 +20,16 @@ import static http.server.service.HttpCode.*;
  * <p>
  * This class is a thread that allows you to manage client http requests independently
  * This class provides all the methods (GET, POST, HEAD, ...) to the client so that it can make requests
- * <p>
  */
 public class ClientThread extends Thread {
 
     /**
-     * Chemin relatif des ressources du serveur
+     * relative path of server resources
      */
-    private final String RESSOURCE_DIRECTORY = "src/http/server/ressources/";
+    private final String RESOURCE_DIRECTORY = "src/http/server/resources/";
 
     /**
-     * Path of reponse pages directory
+     * Path of response pages directory
      */
     public final String RESPONSE_PAGE_DIRECTORY = "src/http/server/responsePages/";
 
@@ -51,7 +49,7 @@ public class ClientThread extends Thread {
     /**
      * ClientThread Constructor
      *
-     * @param clientSocket
+     * @param clientSocket the client socket
      */
     public ClientThread(Socket clientSocket) {
         this.clientSocket = clientSocket;
@@ -81,14 +79,12 @@ public class ClientThread extends Thread {
     }
 
     /**
-     * get HTTP request method from client request and call the right method for treating client request
+     * Get HTTP request method from client request and call the right method for treating client request
      *
      * @param request, request of client
-     * @throws IOException
+     * @throws IOException cannot read/write file
      */
     public void handleRequest(String request) throws IOException {
-
-        // vich method
 
         String method = getMethod(request);
 
@@ -119,10 +115,11 @@ public class ClientThread extends Thread {
                 break;
         }
         this.out.flush();
+        this.out.close();
     }
 
     /**
-     * get HTTP method by spliting request and take first element
+     * Get HTTP method by spliting request and take first element
      *
      * @param request request of client
      * @return HTTP method
@@ -141,7 +138,7 @@ public class ClientThread extends Thread {
         // search ressource
         byte[] contentByte = null;
         try {
-            contentByte = ToolBox.readFileByte(RESSOURCE_DIRECTORY, this.url);
+            contentByte = ToolBox.readFileByte(RESOURCE_DIRECTORY, this.url);
             this.statusCode = OK;
             ContentType contentType = new ContentType(this.extension);
             sendHeader(statusCode, contentType.getContentType(), contentByte.length);
@@ -157,7 +154,8 @@ public class ClientThread extends Thread {
 
     /**
      * Send the http response header
-     * Work like get method without body
+     * Work like GET method without body
+     *
      * @throws IOException if resource requested by client is not found
      */
     public void doHead() throws IOException {
@@ -166,7 +164,7 @@ public class ClientThread extends Thread {
 
         byte[] contentByte = null;
         try {
-            contentByte = ToolBox.readFileByte(RESSOURCE_DIRECTORY, this.url);
+            contentByte = ToolBox.readFileByte(RESOURCE_DIRECTORY, this.url);
             this.statusCode = OK;
             ContentType contentType = new ContentType(this.extension);
             sendHeader(statusCode, contentType.getContentType(), contentByte.length);
@@ -187,7 +185,7 @@ public class ClientThread extends Thread {
     public void doDelete() throws IOException {
 
         // search ressource
-        File file = new File(RESSOURCE_DIRECTORY + this.url);
+        File file = new File(RESOURCE_DIRECTORY + this.url);
         byte[] contentByte = null;
 
         if (file.delete()) {
@@ -207,7 +205,7 @@ public class ClientThread extends Thread {
     /**
      * get request and his body and send the body to the client specified
      *
-     * @throws IOException
+     * @throws IOException cannot read/write file
      */
     public void doPost() throws IOException {
 
@@ -234,11 +232,11 @@ public class ClientThread extends Thread {
 
 //        if (fileType[1].equals("php")) {
 
-            String path = RESSOURCE_DIRECTORY + this.url;
-            String output = this.execPHP(path, parameters);
-            this.statusCode = OK;
-            sendHeader(statusCode, "text/html", output.length());
-            sendBodyByte(output.getBytes());
+        String path = RESOURCE_DIRECTORY + this.url;
+        String output = this.execPHP(path, parameters);
+        this.statusCode = OK;
+        sendHeader(statusCode, "text/html", output.length());
+        sendBodyByte(output.getBytes());
 //        } else {
 //
 //            byte[] contentByte = null;
@@ -286,7 +284,7 @@ public class ClientThread extends Thread {
         byte[] contentByte = parameters.getBytes();
         // traiter le buffer
 
-        String path = RESSOURCE_DIRECTORY + this.url;
+        String path = RESOURCE_DIRECTORY + this.url;
 
         File file = new File(path);
 
@@ -311,10 +309,10 @@ public class ClientThread extends Thread {
     /**
      * Send the http header to the client
      *
-     * @param statusCode http status code, Pair of code and message
-     * @param contentType content type of body response (Eg. text\html for response as html format)
+     * @param statusCode    http status code, Pair of code and message
+     * @param contentType   content type of body response (Eg. text\html for response as html format)
      * @param contentLength the length of response
-     * @throws IOException
+     * @throws IOException cannot read/write file
      */
     public void sendHeader(Pair<Integer, String> statusCode, String contentType, Integer contentLength) throws IOException {
 
@@ -333,7 +331,6 @@ public class ClientThread extends Thread {
      * Send the body of request to the client as a byte
      *
      * @param content content of body response as a binary
-     *
      * @throws IOException if cannot write
      */
     public void sendBodyByte(byte[] content) throws IOException {
@@ -345,7 +342,7 @@ public class ClientThread extends Thread {
      * manage dynamic resource
      *
      * @param scriptName path of the php specified in post request file
-     * @param param of php request commande (body of POST response)
+     * @param param      of php request commande (body of POST response)
      * @return output Stringbuilder
      */
     public String execPHP(String scriptName, String param) {

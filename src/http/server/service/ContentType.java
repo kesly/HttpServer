@@ -3,7 +3,7 @@ package http.server.service;
 import javafx.util.Pair;
 /**
  * ContentType class
- * This service class provide content-type by using the extension
+ * This service class provides content-type by using the extension
  */
 public class ContentType {
 

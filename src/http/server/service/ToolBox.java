@@ -8,14 +8,14 @@ import java.nio.file.Path;
 
 /**
  * ToolBox class
- * This service class provide all the methods currently used
+ * This service class provide all the useful methods currently used
  */
 public class ToolBox {
 
 
     /**
-     * get the value of uri from request by spliting it and take the second element
-     * @Exemple request : GET /test.html
+     * get the value of uri from request by splitting it and take the second element
+     * eg: request : GET /test.html
      *
      * @param request string
      * @return Uri from request
@@ -26,7 +26,7 @@ public class ToolBox {
 
     /**
      * get the value of url from uri by spliting it and take the first element
-     * @Exemple uri : www.test.com/test.html
+     * eg: uri : www.test.com/test.html
      *
      * @param uri string
      * @return Url from uri
@@ -39,7 +39,7 @@ public class ToolBox {
     /**
      * get the value of extension from url by spliting it and take the second element, this value allow to find file content-type
      * and return empty array if url has not extension
-     * @Exemple url : test.html
+     * eg: url : test.html
      *
      * @param url string
      * @return extension from Url
