@@ -81,9 +81,9 @@ public class ClientThread extends Thread {
     }
 
     /**
-     * get HTTP request method from request and call the right method for treating client request
+     * get HTTP request method from client request and call the right method for treating client request
      *
-     * @param request,
+     * @param request, request of client
      * @throws IOException
      */
     public void handleRequest(String request) throws IOException {
@@ -124,7 +124,7 @@ public class ClientThread extends Thread {
     /**
      * get HTTP method by spliting request and take first element
      *
-     * @param request
+     * @param request request of client
      * @return HTTP method
      */
     public String getMethod(String request) {
@@ -132,7 +132,9 @@ public class ClientThread extends Thread {
     }
 
     /**
-     * @throws IOException
+     * Send response of client request on body with http header response
+     *
+     * @throws IOException if resource requested by client is not found
      */
     public void doGet() throws IOException {
 
@@ -153,7 +155,11 @@ public class ClientThread extends Thread {
         this.sendBodyByte(contentByte);
     }
 
-
+    /**
+     * Send the http response header
+     * Work like get method without body
+     * @throws IOException if resource requested by client is not found
+     */
     public void doHead() throws IOException {
 
         // search ressource
@@ -174,7 +180,9 @@ public class ClientThread extends Thread {
     }
 
     /**
-     * @throws IOException
+     * Delete the resource on the request and load page of deleted to confirm that
+     *
+     * @throws IOException if resource is not found
      */
     public void doDelete() throws IOException {
 
@@ -197,6 +205,8 @@ public class ClientThread extends Thread {
     }
 
     /**
+     * get request and his body and send the body to the client specified
+     *
      * @throws IOException
      */
     public void doPost() throws IOException {
@@ -248,6 +258,13 @@ public class ClientThread extends Thread {
 //        }
     }
 
+    /**
+     * get request and his body and replace content of resource of request by body of request,
+     * if resource not existe, create a new one and put the body of request on it, if it cannot create resource
+     * send header with 403 code (forbidden) to saying it haven't permission
+     *
+     * @throws IOException if cannot read line
+     */
     public void doPut() throws IOException {
 
         String otherContent = ".";
@@ -291,6 +308,14 @@ public class ClientThread extends Thread {
 
     }
 
+    /**
+     * Send the http header to the client
+     *
+     * @param statusCode http status code, Pair of code and message
+     * @param contentType content type of body response (Eg. text\html for response as html format)
+     * @param contentLength the length of response
+     * @throws IOException
+     */
     public void sendHeader(Pair<Integer, String> statusCode, String contentType, Integer contentLength) throws IOException {
 
 
@@ -304,15 +329,25 @@ public class ClientThread extends Thread {
         this.out.write(("" + CRLF).getBytes());
     }
 
-    public String readFile(String path) throws IOException {
-        Path fileName = Path.of(RESSOURCE_DIRECTORY, path);
-        return Files.readString(fileName);
-    }
-
+    /**
+     * Send the body of request to the client as a byte
+     *
+     * @param content content of body response as a binary
+     *
+     * @throws IOException if cannot write
+     */
     public void sendBodyByte(byte[] content) throws IOException {
         this.out.write(content);
     }
 
+    /**
+     * execute php code with param from the body of request (POST)
+     * manage dynamic resource
+     *
+     * @param scriptName path of the php specified in post request file
+     * @param param of php request commande (body of POST response)
+     * @return output Stringbuilder
+     */
     public String execPHP(String scriptName, String param) {
 
         StringBuilder output = new StringBuilder();
@@ -334,10 +369,12 @@ public class ClientThread extends Thread {
         return output.toString();
     }
 
-    public int getSuccessCode() {
-        return 200;
-    }
-
+    /**
+     * Convert String on UTF-8 format and return it
+     *
+     * @param value string
+     * @return same string on UTF-8 format
+     */
     public static String decodeValue(String value) {
         try {
             return URLDecoder.decode(value, StandardCharsets.UTF_8.toString());

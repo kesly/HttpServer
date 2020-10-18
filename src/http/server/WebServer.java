@@ -2,30 +2,17 @@
 
 package http.server;
 
-import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URLDecoder;
-import java.nio.Buffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
-import http.server.service.ContentType;
-import javafx.util.Pair;
 
 /**
  * Example program from Chapter 1 Programming Spiders, Bots and Aggregators in
- * Java Copyright 2001 by Jeff Heaton
+ * Java Copyright 2001 by Oumar Kesly
  * <p>
  * WebServer is a very simple web-server. Any request is responded with a very
  * simple web-page.
  *
- * @author Jeff Heaton
+ * @author Kesly Gassant, Oumar DIAKHABY
  * @version 1.0
  */
 public class WebServer {

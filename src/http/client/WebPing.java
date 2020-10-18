@@ -1,22 +1,20 @@
 package http.client;
 
-import http.server.service.ContentType;
-import javafx.util.Pair;
-
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Date;
+
 
 
 /**
  * WebPing class
  */
 public class WebPing {
+
+    /**
+     *
+     * @param args Command line parameters (0 => server host, 1 => server port)
+     */
     public static void main(String[] args) {
 
         if (args.length != 2) {

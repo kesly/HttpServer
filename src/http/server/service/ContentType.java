@@ -27,7 +27,7 @@ public class ContentType {
 
     /**
      * ContentType constructor
-     * @param extension
+     * @param extension of resource on client request
      */
     public ContentType(String extension){
 
@@ -35,8 +35,8 @@ public class ContentType {
     }
 
     /**
-     * get content-type of extension used to instanciate class
-     * @return content-type
+     * get content-type of extension used to instanciate class and return it
+     * @return content-type of the extension
      */
     public String getContentType(){
         String contentType = "";
